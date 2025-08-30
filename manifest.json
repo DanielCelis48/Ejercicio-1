@@ -1,5 +1,5 @@
 {
-  "name": "Juego Culebrita",
+  "name": "Snake - Culebrita",
   "short_name": "Snake",
   "start_url": "./index.html",
   "display": "standalone",
