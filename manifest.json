@@ -1,5 +1,5 @@
 {
-  "name": "Snake - Culebrita",
+  "name": "Snake Touch PWA",
   "short_name": "Snake",
   "start_url": "./index.html",
   "display": "standalone",
