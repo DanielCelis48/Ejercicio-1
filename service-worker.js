@@ -1,4 +1,4 @@
-const CACHE_NAME = 'snake-game-v1';
+const CACHE_NAME = 'snake-pwa-v1';
 const FILES_TO_CACHE = [
   './',
   './index.html',
@@ -18,18 +18,18 @@ self.addEventListener('install', e => {
 
 self.addEventListener('fetch', e => {
   e.respondWith(
-    caches.match(e.request).then(response => {
-      return response || fetch(e.request);
+    caches.match(e.request).then(res => {
+      return res || fetch(e.request);
     })
   );
 });
 
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
+    caches.keys().then(keys => {
+      return Promise.all(
         keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
-      )
-    )
+      );
+    })
   );
 });
