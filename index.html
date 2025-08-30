@@ -5,59 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#000000" />
   <link rel="manifest" href="manifest.json" />
-  <title>Culebrita PWA</title>
+  <title>Snake PWA Touch</title>
   <style>
     body {
       margin: 0;
       background: #000;
-      color: #0f0;
-      font-family: monospace;
       display: flex;
-      flex-direction: column;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       height: 100vh;
+      font-family: monospace;
     }
+
     canvas {
       border: 1px solid #0f0;
-      background: #111;
-    }
-    .controles {
-      margin-top: 20px;
-    }
-    .fila {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-    }
-    button {
-      padding: 15px;
-      font-size: 24px;
-      background: #222;
-      color: #0f0;
-      border: 1px solid #0f0;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    button:active {
-      background: #0f0;
-      color: #000;
+      background-color: #111;
+      touch-action: none; /* Evita scroll en móviles */
     }
   </style>
 </head>
 <body>
   <canvas id="game" width="400" height="400"></canvas>
-
-  <div class="controles">
-    <div class="fila">
-      <button onclick="dir = 'UP'">⬆️</button>
-    </div>
-    <div class="fila">
-      <button onclick="dir = 'LEFT'">⬅️</button>
-      <button onclick="dir = 'DOWN'">⬇️</button>
-      <button onclick="dir = 'RIGHT'">➡️</button>
-    </div>
-  </div>
 
   <script>
     const canvas = document.getElementById('game');
@@ -69,29 +37,62 @@
       x: Math.floor(Math.random() * 20) * box,
       y: Math.floor(Math.random() * 20) * box
     };
-    let dir;
+    let dir = null;
     let score = 0;
 
-    // Teclado físico (PC)
+    // Teclado físico (por si usas PC)
     document.addEventListener('keydown', e => {
-      const key = e.key;
-      if (key === 'ArrowLeft' && dir !== 'RIGHT') dir = 'LEFT';
-      else if (key === 'ArrowUp' && dir !== 'DOWN') dir = 'UP';
-      else if (key === 'ArrowRight' && dir !== 'LEFT') dir = 'RIGHT';
-      else if (key === 'ArrowDown' && dir !== 'UP') dir = 'DOWN';
+      if (e.key === 'ArrowLeft' && dir !== 'RIGHT') dir = 'LEFT';
+      else if (e.key === 'ArrowUp' && dir !== 'DOWN') dir = 'UP';
+      else if (e.key === 'ArrowRight' && dir !== 'LEFT') dir = 'RIGHT';
+      else if (e.key === 'ArrowDown' && dir !== 'UP') dir = 'DOWN';
+    });
+
+    // Soporte para gestos táctiles (swipe)
+    let xStart = null;
+    let yStart = null;
+
+    canvas.addEventListener('touchstart', e => {
+      const touch = e.touches[0];
+      xStart = touch.clientX;
+      yStart = touch.clientY;
+    });
+
+    canvas.addEventListener('touchmove', e => {
+      if (!xStart || !yStart) return;
+
+      const xEnd = e.touches[0].clientX;
+      const yEnd = e.touches[0].clientY;
+
+      const xDiff = xStart - xEnd;
+      const yDiff = yStart - yEnd;
+
+      if (Math.abs(xDiff) > Math.abs(yDiff)) {
+        if (xDiff > 0 && dir !== 'RIGHT') dir = 'LEFT';
+        else if (xDiff < 0 && dir !== 'LEFT') dir = 'RIGHT';
+      } else {
+        if (yDiff > 0 && dir !== 'DOWN') dir = 'UP';
+        else if (yDiff < 0 && dir !== 'UP') dir = 'DOWN';
+      }
+
+      xStart = null;
+      yStart = null;
     });
 
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      // Dibujar serpiente
       for (let i = 0; i < snake.length; i++) {
         ctx.fillStyle = i === 0 ? '#0f0' : '#0a0';
         ctx.fillRect(snake[i].x, snake[i].y, box, box);
       }
 
+      // Dibujar comida
       ctx.fillStyle = 'red';
       ctx.fillRect(food.x, food.y, box, box);
 
+      // Movimiento
       let headX = snake[0].x;
       let headY = snake[0].y;
 
@@ -100,6 +101,7 @@
       if (dir === 'UP') headY -= box;
       if (dir === 'DOWN') headY += box;
 
+      // Comer
       if (headX === food.x && headY === food.y) {
         score++;
         food = {
@@ -112,13 +114,14 @@
 
       const newHead = { x: headX, y: headY };
 
+      // Colisiones
       if (
         headX < 0 || headX >= canvas.width ||
         headY < 0 || headY >= canvas.height ||
         collision(newHead, snake)
       ) {
         clearInterval(game);
-        alert('Fin del juego. Puntuación: ' + score);
+        alert('¡Fin del juego! Puntos: ' + score);
         location.reload();
       }
 
@@ -126,12 +129,7 @@
     }
 
     function collision(head, array) {
-      for (let i = 0; i < array.length; i++) {
-        if (head.x === array[i].x && head.y === array[i].y) {
-          return true;
-        }
-      }
-      return false;
+      return array.some(seg => seg.x === head.x && seg.y === head.y);
     }
 
     const game = setInterval(draw, 100);
@@ -140,8 +138,8 @@
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('service-worker.js')
-          .then(reg => console.log('✅ SW registrado', reg))
-          .catch(err => console.error('❌ SW no registrado', err));
+          .then(reg => console.log('✅ SW registrado'))
+          .catch(err => console.error('❌ SW error:', err));
       });
     }
   </script>
