@@ -2,114 +2,113 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Calculadora Simple</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#000000">
+  <link rel="manifest" href="manifest.json">
+  <title>Juego Culebrita (Snake)</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
+      margin: 0;
+      background: #000;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
+      color: #0f0;
+      font-family: monospace;
     }
-
-    .calculadora {
-      background: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-
-    #resultado {
-      width: 100%;
-      height: 50px;
-      font-size: 24px;
-      text-align: right;
-      margin-bottom: 10px;
-      padding-right: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-
-    .botones {
-      display: grid;
-      grid-template-columns: repeat(4, 60px);
-      grid-gap: 10px;
-      justify-content: center;
-    }
-
-    button {
-      padding: 15px;
-      font-size: 18px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      background: #e0e0e0;
-      transition: background 0.2s;
-    }
-
-    button:hover {
-      background: #ccc;
-    }
-
-    .igual {
-      background: #4CAF50;
-      color: white;
-    }
-
-    .igual:hover {
-      background: #45a049;
+    canvas {
+      border: 1px solid #0f0;
+      background-color: #111;
     }
   </style>
 </head>
 <body>
-
-  <div class="calculadora">
-    <input type="text" id="resultado" disabled>
-    <div class="botones">
-      <button onclick="agregar('7')">7</button>
-      <button onclick="agregar('8')">8</button>
-      <button onclick="agregar('9')">9</button>
-      <button onclick="agregar('/')">/</button>
-
-      <button onclick="agregar('4')">4</button>
-      <button onclick="agregar('5')">5</button>
-      <button onclick="agregar('6')">6</button>
-      <button onclick="agregar('*')">*</button>
-
-      <button onclick="agregar('1')">1</button>
-      <button onclick="agregar('2')">2</button>
-      <button onclick="agregar('3')">3</button>
-      <button onclick="agregar('-')">-</button>
-
-      <button onclick="agregar('0')">0</button>
-      <button onclick="agregar('.')">.</button>
-      <button onclick="calcular()" class="igual">=</button>
-      <button onclick="agregar('+')">+</button>
-
-      <button onclick="limpiar()" style="grid-column: span 4;">C</button>
-    </div>
-  </div>
+  <canvas id="game" width="400" height="400"></canvas>
 
   <script>
-    function agregar(valor) {
-      document.getElementById('resultado').value += valor;
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+
+    const box = 20;
+    let snake = [{x: 9 * box, y: 9 * box}];
+    let food = {
+      x: Math.floor(Math.random() * 20) * box,
+      y: Math.floor(Math.random() * 20) * box
+    };
+    let dir;
+    let score = 0;
+
+    document.addEventListener('keydown', direction);
+
+    function direction(event) {
+      if (event.key === 'ArrowLeft' && dir !== 'RIGHT') dir = 'LEFT';
+      else if (event.key === 'ArrowUp' && dir !== 'DOWN') dir = 'UP';
+      else if (event.key === 'ArrowRight' && dir !== 'LEFT') dir = 'RIGHT';
+      else if (event.key === 'ArrowDown' && dir !== 'UP') dir = 'DOWN';
     }
 
-    function limpiar() {
-      document.getElementById('resultado').value = '';
-    }
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    function calcular() {
-      try {
-        const resultado = eval(document.getElementById('resultado').value);
-        document.getElementById('resultado').value = resultado;
-      } catch (e) {
-        alert('Operación no válida');
-        limpiar();
+      for (let i = 0; i < snake.length; i++) {
+        ctx.fillStyle = (i === 0) ? "#0f0" : "#0a0";
+        ctx.fillRect(snake[i].x, snake[i].y, box, box);
       }
+
+      ctx.fillStyle = "red";
+      ctx.fillRect(food.x, food.y, box, box);
+
+      let headX = snake[0].x;
+      let headY = snake[0].y;
+
+      if (dir === 'LEFT') headX -= box;
+      if (dir === 'RIGHT') headX += box;
+      if (dir === 'UP') headY -= box;
+      if (dir === 'DOWN') headY += box;
+
+      if (headX === food.x && headY === food.y) {
+        score++;
+        food = {
+          x: Math.floor(Math.random() * 20) * box,
+          y: Math.floor(Math.random() * 20) * box
+        };
+      } else {
+        snake.pop();
+      }
+
+      const newHead = {x: headX, y: headY};
+
+      if (
+        headX < 0 || headX >= canvas.width ||
+        headY < 0 || headY >= canvas.height ||
+        collision(newHead, snake)
+      ) {
+        clearInterval(game);
+        alert('Fin del juego. Puntuación: ' + score);
+      }
+
+      snake.unshift(newHead);
     }
+
+    function collision(head, array) {
+      for (let i = 0; i < array.length; i++) {
+        if (head.x === array[i].x && head.y === array[i].y) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    const game = setInterval(draw, 100);
   </script>
 
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(reg => console.log('✅ Service Worker registrado'))
+        .catch(err => console.error('❌ Error al registrar el SW', err));
+    }
+  </script>
 </body>
 </html>
